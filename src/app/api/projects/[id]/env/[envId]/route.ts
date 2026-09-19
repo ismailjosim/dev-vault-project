@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb'
 import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { envVariableUpdateSchema } from '@/types/project'
+import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 
 type RouteContext = {
@@ -49,6 +50,19 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 			)
 		}
 
+		if ('value' in input && input.value) {
+			await recordEnvVersion({
+				variableId: variable._id,
+				projectId: project._id,
+				environment: variable.environment,
+				key: variable.key,
+				value: input.value,
+				changeType: 'updated',
+				changeReason: 'Updated secret value',
+				modifiedByUserId: userId,
+			})
+		}
+
 		const payload = serializeDocument<Record<string, unknown>>(variable)
 		payload.value = null
 
@@ -85,6 +99,17 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 				{ status: 404 },
 			)
 		}
+
+		await recordEnvVersion({
+			variableId: variable._id,
+			projectId: project._id,
+			environment: variable.environment,
+			key: variable.key,
+			value: variable.getDecryptedValue(),
+			changeType: 'deleted',
+			changeReason: 'Variable deleted',
+			modifiedByUserId: userId,
+		})
 
 		project.envVariables.pull(variable._id)
 		await project.save()

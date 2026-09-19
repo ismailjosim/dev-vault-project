@@ -1,7 +1,16 @@
 'use client'
 
 import { ExpiryBadge } from '@/components/env/ExpiryBadge'
-import { Clipboard, Copy, Eye, EyeOff, FileCode2, Trash2 } from 'lucide-react'
+import { SecretHistoryModal } from '@/components/env/SecretHistoryModal'
+import {
+	Clipboard,
+	Copy,
+	Eye,
+	EyeOff,
+	FileCode2,
+	History,
+	Trash2,
+} from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 
@@ -28,6 +37,7 @@ export function EnvVariableItem({
 	const [copied, setCopied] = useState<string | null>(null)
 	const [revealedValue, setRevealedValue] = useState<string | null>(null)
 	const [isRevealing, setIsRevealing] = useState(false)
+	const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
 	async function getDecryptedValue() {
 		const response = await fetch(`/api/projects/${projectId}/env?reveal=true`)
@@ -68,6 +78,8 @@ export function EnvVariableItem({
 	}
 
 	async function deleteVariable() {
+		if (!window.confirm(`Delete variable ${variable.key}?`)) return
+
 		await fetch(`/api/projects/${projectId}/env/${variable._id}`, {
 			method: 'DELETE',
 		})
@@ -75,68 +87,85 @@ export function EnvVariableItem({
 	}
 
 	return (
-		<tr className='border-border border-t'>
-			<td className='text-foreground px-3 py-3 font-mono text-sm'>
-				{variable.key}
-			</td>
-			<td className='text-muted-foreground max-w-55 truncate px-3 py-3 font-mono text-sm'>
-				{revealedValue ?? '••••••••'}
-			</td>
-			<td className='px-3 py-3'>
-				<span className='bg-secondary text-secondary-foreground rounded px-2 py-1 text-xs'>
-					{variable.type}
-				</span>
-			</td>
-			<td className='text-muted-foreground px-3 py-3 text-sm'>
-				{variable.environment}
-			</td>
-			<td className='text-muted-foreground px-3 py-3 text-sm'>
-				<div className='flex flex-col gap-1'>
-					<ExpiryBadge expiryDate={variable.expiryDate} />
-					{variable.note && <span>{variable.note}</span>}
-				</div>
-			</td>
-			<td className='px-3 py-3 text-right'>
-				<div className='flex justify-end gap-2'>
-					<IconAction
-						label={revealedValue === null ? 'Reveal value' : 'Hide value'}
-						onClick={toggleReveal}
-						disabled={isRevealing}
-					>
-						{revealedValue === null ? (
-							<Eye className='h-4 w-4' />
-						) : (
-							<EyeOff className='h-4 w-4' />
-						)}
-					</IconAction>
-					<IconAction
-						label={copied === 'key' ? 'Copied key' : 'Copy key'}
-						onClick={() => copyValue('key')}
-					>
-						<Clipboard className='h-4 w-4' />
-					</IconAction>
-					<IconAction
-						label={copied === 'value' ? 'Copied value' : 'Copy value'}
-						onClick={() => copyValue('value')}
-					>
-						<Copy className='h-4 w-4' />
-					</IconAction>
-					<IconAction
-						label={copied === 'pair' ? 'Copied KEY=VALUE' : 'Copy KEY=VALUE'}
-						onClick={() => copyValue('pair')}
-					>
-						<FileCode2 className='h-4 w-4' />
-					</IconAction>
-					<IconAction
-						label='Delete variable'
-						onClick={deleteVariable}
-						tone='danger'
-					>
-						<Trash2 className='h-4 w-4' />
-					</IconAction>
-				</div>
-			</td>
-		</tr>
+		<>
+			<tr className='border-border border-t'>
+				<td className='text-foreground px-3 py-3 font-mono text-sm'>
+					{variable.key}
+				</td>
+				<td className='text-muted-foreground max-w-55 truncate px-3 py-3 font-mono text-sm'>
+					{revealedValue ?? '••••••••'}
+				</td>
+				<td className='px-3 py-3'>
+					<span className='bg-secondary text-secondary-foreground rounded px-2 py-1 text-xs'>
+						{variable.type}
+					</span>
+				</td>
+				<td className='text-muted-foreground px-3 py-3 text-sm'>
+					{variable.environment}
+				</td>
+				<td className='text-muted-foreground px-3 py-3 text-sm'>
+					<div className='flex flex-col gap-1'>
+						<ExpiryBadge expiryDate={variable.expiryDate} />
+						{variable.note && <span>{variable.note}</span>}
+					</div>
+				</td>
+				<td className='px-3 py-3 text-right'>
+					<div className='flex justify-end gap-2'>
+						<IconAction
+							label={revealedValue === null ? 'Reveal value' : 'Hide value'}
+							onClick={toggleReveal}
+							disabled={isRevealing}
+						>
+							{revealedValue === null ? (
+								<Eye className='h-4 w-4' />
+							) : (
+								<EyeOff className='h-4 w-4' />
+							)}
+						</IconAction>
+						<IconAction
+							label='Version history & rollback'
+							onClick={() => setIsHistoryOpen(true)}
+						>
+							<History className='h-4 w-4' />
+						</IconAction>
+						<IconAction
+							label={copied === 'key' ? 'Copied key' : 'Copy key'}
+							onClick={() => copyValue('key')}
+						>
+							<Clipboard className='h-4 w-4' />
+						</IconAction>
+						<IconAction
+							label={copied === 'value' ? 'Copied value' : 'Copy value'}
+							onClick={() => copyValue('value')}
+						>
+							<Copy className='h-4 w-4' />
+						</IconAction>
+						<IconAction
+							label={copied === 'pair' ? 'Copied KEY=VALUE' : 'Copy KEY=VALUE'}
+							onClick={() => copyValue('pair')}
+						>
+							<FileCode2 className='h-4 w-4' />
+						</IconAction>
+						<IconAction
+							label='Delete variable'
+							onClick={deleteVariable}
+							tone='danger'
+						>
+							<Trash2 className='h-4 w-4' />
+						</IconAction>
+					</div>
+				</td>
+			</tr>
+
+			<SecretHistoryModal
+				projectId={projectId}
+				variableId={variable._id}
+				variableKey={variable.key}
+				environment={variable.environment}
+				isOpen={isHistoryOpen}
+				onClose={() => setIsHistoryOpen(false)}
+			/>
+		</>
 	)
 }
 

@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb'
 import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { envVariableImportSchema } from '@/types/project'
+import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 
 type RouteContext = {
@@ -42,7 +43,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
 						? new Date(variableInput.expiryDate)
 						: null,
 				})
-				savedVariables.push(await existingVariable.save())
+				const updated = await existingVariable.save()
+				await recordEnvVersion({
+					variableId: updated._id,
+					projectId: project._id,
+					environment: variableInput.environment,
+					key: variableInput.key,
+					value: variableInput.value,
+					changeType: 'updated',
+					changeReason: 'Updated via .env import',
+					modifiedByUserId: userId,
+				})
+				savedVariables.push(updated)
 				continue
 			}
 
@@ -54,6 +66,16 @@ export async function POST(request: NextRequest, context: RouteContext) {
 				projectId: project._id,
 			})
 			project.envVariables.addToSet(variable._id)
+			await recordEnvVersion({
+				variableId: variable._id,
+				projectId: project._id,
+				environment: variableInput.environment,
+				key: variableInput.key,
+				value: variableInput.value,
+				changeType: 'created',
+				changeReason: 'Created via .env import',
+				modifiedByUserId: userId,
+			})
 			savedVariables.push(variable)
 		}
 

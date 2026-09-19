@@ -3,6 +3,7 @@ import { connectDB } from '@/lib/mongodb'
 import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { envQuerySchema, envVariableCreateSchema } from '@/types/project'
+import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 
 type RouteContext = {
@@ -73,6 +74,17 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
 		project.envVariables.addToSet(variable._id)
 		await project.save()
+
+		await recordEnvVersion({
+			variableId: variable._id,
+			projectId: project._id,
+			environment: variable.environment,
+			key: variable.key,
+			value: input.value,
+			changeType: 'created',
+			changeReason: 'Initial creation',
+			modifiedByUserId: userId,
+		})
 
 		const payload = serializeDocument<Record<string, unknown>>(variable)
 		payload.value = null
