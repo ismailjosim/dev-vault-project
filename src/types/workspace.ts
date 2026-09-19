@@ -36,5 +36,73 @@ export const workspaceMemberUpdateSchema = workspaceMemberAddSchema
 		message: 'At least one field is required',
 	})
 
+export type WorkspaceRole = z.infer<typeof workspaceRoleSchema>
 export type WorkspaceCreateInput = z.infer<typeof workspaceCreateSchema>
 export type WorkspaceMemberAddInput = z.infer<typeof workspaceMemberAddSchema>
+
+// --- Workspace Entity Interfaces ---
+
+export interface WorkspaceItem {
+	_id: string
+	name: string
+	slug: string
+	role?: WorkspaceRole | string
+	description?: string
+}
+
+/** Alias for backwards compatibility with WorkspaceItem */
+export type WorkspaceRecord = WorkspaceItem
+
+export interface WorkspaceMemberItem {
+	_id: string
+	workspaceId?: string
+	userId?: string
+	email: string
+	role: WorkspaceRole
+	allowedEnvironments: string[]
+	canRevealSecrets: boolean
+	canExportSecrets: boolean
+	createdAt?: string | Date
+	updatedAt?: string | Date
+}
+
+/** Alias for backwards compatibility with WorkspaceMemberItem */
+export type Member = WorkspaceMemberItem
+
+// --- Component Props Interfaces ---
+
+export interface WorkspaceSwitcherProps {
+	initialWorkspaces?: WorkspaceItem[]
+}
+
+export interface CreateWorkspaceDialogProps {
+	onCreated?: (workspace: WorkspaceItem) => void
+	trigger?: React.ReactNode
+}
+
+export interface MembersManagementProps {
+	workspaceId: string
+	initialMembers: WorkspaceMemberItem[]
+	currentUserRole: string
+}
+
+export interface InviteMemberDialogProps {
+	workspaceId: string
+	isOpen: boolean
+	onClose: () => void
+	onMemberInvited: (member: WorkspaceMemberItem) => void
+}
+
+export interface MembersTableProps {
+	members: WorkspaceMemberItem[]
+	isOwnerOrAdmin: boolean
+	onRemoveMember: (memberId: string) => Promise<void> | void
+}
+
+export interface WorkspaceMenuItemProps {
+	workspace: WorkspaceItem
+	isActive: boolean
+	onSelect: (id: string) => void
+	onManageTeam: () => void
+}
+

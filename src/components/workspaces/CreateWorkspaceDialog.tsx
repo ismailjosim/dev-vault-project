@@ -4,17 +4,7 @@ import { useState } from 'react'
 import { Plus, X, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
-export interface WorkspaceRecord {
-	_id: string
-	name: string
-	slug: string
-	role?: string
-}
-
-interface CreateWorkspaceDialogProps {
-	onCreated?: (workspace: WorkspaceRecord) => void
-	trigger?: React.ReactNode
-}
+import type { CreateWorkspaceDialogProps } from '@/types/workspace'
 
 export function CreateWorkspaceDialog({
 	onCreated,
@@ -177,3 +167,8 @@ export function CreateWorkspaceDialog({
 		</>
 	)
 }
+
+export type {
+	WorkspaceRecord,
+	CreateWorkspaceDialogProps,
+} from '@/types/workspace'

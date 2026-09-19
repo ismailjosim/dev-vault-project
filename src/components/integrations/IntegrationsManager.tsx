@@ -308,7 +308,7 @@ export function IntegrationsManager({
 												</div>
 											</div>
 										</td>
-										<td className='text-muted-foreground max-w-[180px] truncate px-4 py-3 font-mono text-xs'>
+										<td className='text-muted-foreground max-w-45 truncate px-4 py-3 font-mono text-xs'>
 											{item.targetIdentifier}
 										</td>
 										<td className='text-muted-foreground px-4 py-3 text-xs'>
