@@ -60,6 +60,20 @@ export function EnvVariableItem({
 
 		await navigator.clipboard.writeText(text)
 		setCopied(format)
+
+		// Audit log secret copy event
+		void fetch('/api/audit/log', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				action: 'SECRET_COPY',
+				projectId,
+				targetKey: variable.key,
+				environment: variable.environment,
+				metadata: { format },
+			}),
+		})
+
 		window.setTimeout(() => {
 			navigator.clipboard.writeText('')
 			setCopied(null)
@@ -75,6 +89,18 @@ export function EnvVariableItem({
 		setIsRevealing(true)
 		setRevealedValue(await getDecryptedValue())
 		setIsRevealing(false)
+
+		// Audit log secret reveal event
+		void fetch('/api/audit/log', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				action: 'SECRET_REVEAL',
+				projectId,
+				targetKey: variable.key,
+				environment: variable.environment,
+			}),
+		})
 	}
 
 	async function deleteVariable() {

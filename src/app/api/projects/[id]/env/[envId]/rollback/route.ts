@@ -1,8 +1,10 @@
 import { handleApiError, requireUserId, serializeDocument } from '@/lib/api'
 import { connectDB } from '@/lib/mongodb'
+import { getCurrentUser } from '@/lib/session'
 import { EnvVariable } from '@/models/EnvVariable'
 import { EnvVariableVersion } from '@/models/EnvVariableVersion'
 import { Project } from '@/models/Project'
+import { recordAudit } from '@/utils/audit'
 import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
@@ -75,6 +77,19 @@ export async function POST(request: NextRequest, context: RouteContext) {
 			changeType: 'rollback',
 			changeReason: reason || `Rolled back to version ${targetVersionNumber}`,
 			modifiedByUserId: userId,
+		})
+
+		const user = await getCurrentUser()
+		await recordAudit({
+			userId,
+			userEmail: user?.email || 'user',
+			action: 'SECRET_ROLLBACK',
+			projectId: project._id,
+			projectName: project.projectName,
+			targetKey: variable.key,
+			environment: variable.environment,
+			metadata: { targetVersionNumber, reason },
+			request,
 		})
 
 		const payload = serializeDocument<Record<string, unknown>>(variable)

@@ -1,8 +1,10 @@
 import { handleApiError, requireUserId, serializeDocument } from '@/lib/api'
 import { connectDB } from '@/lib/mongodb'
+import { getCurrentUser } from '@/lib/session'
 import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { envVariableUpdateSchema } from '@/types/project'
+import { recordAudit } from '@/utils/audit'
 import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -63,6 +65,18 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 			})
 		}
 
+		const user = await getCurrentUser()
+		await recordAudit({
+			userId,
+			userEmail: user?.email || 'user',
+			action: 'SECRET_UPDATE',
+			projectId: project._id,
+			projectName: project.projectName,
+			targetKey: variable.key,
+			environment: variable.environment,
+			request,
+		})
+
 		const payload = serializeDocument<Record<string, unknown>>(variable)
 		payload.value = null
 
@@ -72,7 +86,7 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 	}
 }
 
-export async function DELETE(_request: NextRequest, context: RouteContext) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
 	try {
 		const { userId, response } = await requireUserId()
 		if (response) return response
@@ -109,6 +123,18 @@ export async function DELETE(_request: NextRequest, context: RouteContext) {
 			changeType: 'deleted',
 			changeReason: 'Variable deleted',
 			modifiedByUserId: userId,
+		})
+
+		const user = await getCurrentUser()
+		await recordAudit({
+			userId,
+			userEmail: user?.email || 'user',
+			action: 'SECRET_DELETE',
+			projectId: project._id,
+			projectName: project.projectName,
+			targetKey: variable.key,
+			environment: variable.environment,
+			request,
 		})
 
 		project.envVariables.pull(variable._id)

@@ -1,8 +1,10 @@
 import { handleApiError, requireUserId } from '@/lib/api'
 import { connectDB } from '@/lib/mongodb'
+import { getCurrentUser } from '@/lib/session'
 import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { exportSchema } from '@/types/project'
+import { recordAudit } from '@/utils/audit'
 import { generateEnvFile, getExportFilename } from '@/utils/env-exporter'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -44,6 +46,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
 		}))
 		const filename = getExportFilename(project.slug, input.format)
 		const content = generateEnvFile(exportVariables, input.format)
+
+		const user = await getCurrentUser()
+		await recordAudit({
+			userId,
+			userEmail: user?.email || 'user',
+			action: 'ENV_EXPORT',
+			projectId: project._id,
+			projectName: project.projectName,
+			environment: input.environment,
+			metadata: { format: input.format, count: exportVariables.length },
+			request,
+		})
 
 		return NextResponse.json({ filename, content })
 	} catch (error) {

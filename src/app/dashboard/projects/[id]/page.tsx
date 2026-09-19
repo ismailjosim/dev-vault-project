@@ -110,6 +110,12 @@ export default async function ProjectDetailPage({
 						>
 							Docs
 						</Link>
+						<Link
+							href={`/dashboard/projects/${projectPayload._id}/audit`}
+							className='border-border text-foreground hover:bg-hover rounded-md border px-3 py-2 text-sm font-medium transition'
+						>
+							Audit Log
+						</Link>
 						<DeleteProjectDialog projectId={projectPayload._id} />
 					</div>
 				</div>

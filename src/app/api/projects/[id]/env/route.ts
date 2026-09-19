@@ -1,8 +1,10 @@
 import { handleApiError, requireUserId, serializeDocument } from '@/lib/api'
 import { connectDB } from '@/lib/mongodb'
+import { getCurrentUser } from '@/lib/session'
 import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { envQuerySchema, envVariableCreateSchema } from '@/types/project'
+import { recordAudit } from '@/utils/audit'
 import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -84,6 +86,18 @@ export async function POST(request: NextRequest, context: RouteContext) {
 			changeType: 'created',
 			changeReason: 'Initial creation',
 			modifiedByUserId: userId,
+		})
+
+		const user = await getCurrentUser()
+		await recordAudit({
+			userId,
+			userEmail: user?.email || 'user',
+			action: 'SECRET_CREATE',
+			projectId: project._id,
+			projectName: project.projectName,
+			targetKey: variable.key,
+			environment: variable.environment,
+			request,
 		})
 
 		const payload = serializeDocument<Record<string, unknown>>(variable)
