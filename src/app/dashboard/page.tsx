@@ -5,11 +5,14 @@ import { SearchBar } from '@/components/common/SearchBar'
 import { LogoutButton } from '@/components/auth/LogoutButton'
 import { ProjectList } from '@/components/projects/ProjectList'
 import { ProjectSummary } from '@/components/projects/ProjectCard'
+import { WorkspaceSwitcher } from '@/components/workspaces/WorkspaceSwitcher'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import { connectDB } from '@/lib/mongodb'
 import { serializeDocument } from '@/lib/api'
 import { Project } from '@/models/Project'
+import { Workspace } from '@/models/Workspace'
+import { WorkspaceMember } from '@/models/WorkspaceMember'
 import { projectQuerySchema } from '@/types/project'
 import {
 	Code2,
@@ -21,6 +24,8 @@ import {
 	LayoutTemplate,
 	ShieldCheck,
 	Tags,
+	Terminal,
+	Users,
 } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -44,21 +49,53 @@ export default async function DashboardPage({
 
 	await connectDB()
 	const rawParams = await searchParams
+	const selectedWorkspaceId =
+		typeof rawParams.workspaceId === 'string' &&
+		rawParams.workspaceId !== 'personal'
+			? rawParams.workspaceId
+			: null
+
+	// Fetch user's workspaces
+	const memberships = await WorkspaceMember.find({ userId: user.id })
+	const workspaceIds = memberships.map((m) => m.workspaceId)
+	const userWorkspaces = await Workspace.find({
+		$or: [{ ownerId: user.id }, { _id: { $in: workspaceIds } }],
+	}).select('_id name slug')
+
+	const activeWorkspace = selectedWorkspaceId
+		? await Workspace.findById(selectedWorkspaceId)
+		: null
+
 	const query = projectQuerySchema.parse({
 		search: rawParams.search,
 		category: rawParams.category,
 		framework: rawParams.framework,
 		tag: rawParams.tag,
+		workspaceId: rawParams.workspaceId,
 		page: rawParams.page,
 		limit: rawParams.limit,
 	})
-	const filter: Record<string, unknown> = { userId: user.id }
+
+	const filter: Record<string, unknown> = {}
+	if (selectedWorkspaceId) {
+		filter.workspaceId = selectedWorkspaceId
+	} else {
+		// Personal projects: owned by user and not assigned to a workspace
+		filter.userId = user.id
+		filter.$or = [{ workspaceId: null }, { workspaceId: { $exists: false } }]
+	}
 
 	if (query.search) {
-		filter.$or = [
+		const searchCondition = [
 			{ projectName: { $regex: query.search, $options: 'i' } },
 			{ description: { $regex: query.search, $options: 'i' } },
 		]
+		if (filter.$or) {
+			filter.$and = [{ $or: filter.$or }, { $or: searchCondition }]
+			delete filter.$or
+		} else {
+			filter.$or = searchCondition
+		}
 	}
 
 	if (query.category) filter.category = query.category
@@ -73,25 +110,48 @@ export default async function DashboardPage({
 		<main className='bg-background min-h-screen px-6 py-8'>
 			<div className='mx-auto max-w-6xl'>
 				<div className='flex flex-col justify-between gap-4 sm:flex-row sm:items-center'>
-					<div>
-						<div className='mb-3'>
-							<BrandLogo href='/dashboard' size='sm' />
-						</div>
-						<h1 className='text-foreground text-2xl font-semibold'>Projects</h1>
-						<p className='text-muted-foreground mt-1 text-sm'>
-							Manage project credentials and environment files.
-						</p>
+					<div className='flex items-center gap-3'>
+						<BrandLogo href='/dashboard' size='sm' />
+						<WorkspaceSwitcher
+							initialWorkspaces={serializeDocument(userWorkspaces)}
+						/>
 					</div>
 					<div className='flex items-center gap-3'>
+						{activeWorkspace && (
+							<Link
+								href={`/dashboard/workspaces/${activeWorkspace._id}/members`}
+								className='border-border bg-card text-foreground hover:bg-muted flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs font-medium'
+							>
+								<Users className='text-primary h-3.5 w-3.5' />
+								Manage Team
+							</Link>
+						)}
 						<ThemeToggle />
 						<LogoutButton />
 						<Link
-							href='/dashboard/projects/create'
+							href={
+								selectedWorkspaceId
+									? `/dashboard/projects/create?workspaceId=${selectedWorkspaceId}`
+									: '/dashboard/projects/create'
+							}
 							className='bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-semibold hover:opacity-90'
 						>
 							New project
 						</Link>
 					</div>
+				</div>
+
+				<div className='mt-6'>
+					<h1 className='text-foreground text-2xl font-semibold'>
+						{activeWorkspace
+							? `${activeWorkspace.name} Projects`
+							: 'Personal Projects'}
+					</h1>
+					<p className='text-muted-foreground mt-1 text-sm'>
+						{activeWorkspace
+							? `Collaborative workspace vault (${activeWorkspace.slug})`
+							: 'Your personal credentials and environment configurations.'}
+					</p>
 				</div>
 
 				<div className='mt-6 grid gap-3 lg:grid-cols-[1fr_360px]'>
@@ -100,6 +160,18 @@ export default async function DashboardPage({
 				</div>
 
 				<div className='mt-6 grid gap-3 md:grid-cols-2 xl:grid-cols-4'>
+					<ToolLink
+						href='/dashboard/tools/api-keys'
+						icon={<Terminal className='h-4 w-4 text-emerald-500' />}
+						title='Developer CLI'
+						description='CLI injection & API tokens.'
+					/>
+					<ToolLink
+						href='/dashboard/tools/secret-share'
+						icon={<Flame className='h-4 w-4 text-amber-500' />}
+						title='Secret share'
+						description='Burn-after-reading ephemeral links.'
+					/>
 					<ToolLink
 						href='/dashboard/tools/password-generator'
 						icon={<KeyRound className='h-4 w-4' />}
@@ -141,12 +213,6 @@ export default async function DashboardPage({
 						icon={<FileCheck2 className='h-4 w-4' />}
 						title='Env checker'
 						description='Compare saved keys to examples.'
-					/>
-					<ToolLink
-						href='/dashboard/tools/secret-share'
-						icon={<Flame className='h-4 w-4 text-amber-500' />}
-						title='Secret share'
-						description='Burn-after-reading ephemeral links.'
 					/>
 					<ToolLink
 						href='/dashboard/tags'

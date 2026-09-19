@@ -105,6 +105,19 @@ export default async function ProjectDetailPage({
 							isPinned={projectPayload.isPinned}
 						/>
 						<Link
+							href={`/dashboard/projects/${projectPayload._id}/security`}
+							className='border-border text-foreground hover:bg-hover flex items-center gap-1.5 rounded-md border px-3 py-2 text-sm font-medium transition'
+						>
+							<span className='h-2 w-2 animate-pulse rounded-full bg-emerald-500' />
+							Security
+						</Link>
+						<Link
+							href={`/dashboard/projects/${projectPayload._id}/integrations`}
+							className='border-border text-foreground hover:bg-hover rounded-md border px-3 py-2 text-sm font-medium transition'
+						>
+							Integrations
+						</Link>
+						<Link
 							href={`/dashboard/projects/${projectPayload._id}/docs`}
 							className='border-border text-foreground hover:bg-hover rounded-md border px-3 py-2 text-sm font-medium transition'
 						>

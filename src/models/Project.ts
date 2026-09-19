@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Types } from 'mongoose'
 
 export interface IProject extends Document {
 	userId: string
+	workspaceId?: Types.ObjectId
 	projectName: string
 	slug: string
 	description: string
@@ -34,6 +35,12 @@ const projectSchema = new Schema<IProject>(
 		userId: {
 			type: String,
 			required: true,
+			index: true,
+		},
+		workspaceId: {
+			type: Schema.Types.ObjectId,
+			ref: 'Workspace',
+			default: null,
 			index: true,
 		},
 		projectName: {

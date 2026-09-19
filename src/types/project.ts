@@ -27,6 +27,7 @@ export const projectCreateSchema = z.object({
 	category: projectCategorySchema.default('Other'),
 	framework: z.string().trim().min(1).max(60).default('Other'),
 	tags: tagsSchema,
+	workspaceId: z.string().optional().nullable(),
 })
 
 export const projectUpdateSchema = projectCreateSchema
@@ -43,6 +44,7 @@ export const projectQuerySchema = z.object({
 	category: z.string().trim().optional().default(''),
 	framework: z.string().trim().optional().default(''),
 	tag: z.string().trim().optional().default(''),
+	workspaceId: z.string().trim().optional(),
 	page: z.coerce.number().int().min(1).optional().default(1),
 	limit: z.coerce.number().int().min(1).max(50).optional().default(12),
 })
