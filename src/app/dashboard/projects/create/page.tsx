@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import { ProjectForm } from '@/components/projects/ProjectForm'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Create Project',
+	description:
+		'Create a new project in DevVault to organize and encrypt environment variables across environments.',
+}
 
 export default async function CreateProjectPage() {
 	const user = await getCurrentUser()

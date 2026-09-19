@@ -1,9 +1,16 @@
+import type { Metadata } from 'next'
 import { TemplateList } from '@/components/templates/TemplateList'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import { getBuiltInTemplates } from '@/utils/templates'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Environment Templates',
+	description:
+		'Pre-configured environment variable templates for Next.js, MERN, Stripe, Firebase, AWS, Supabase, and more.',
+}
 
 export default async function TemplatesPage() {
 	const user = await getCurrentUser()

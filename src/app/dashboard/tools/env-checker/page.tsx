@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { EnvChecker } from '@/components/tools/EnvChecker'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { serializeDocument } from '@/lib/api'
@@ -7,6 +8,12 @@ import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Missing Env Checker',
+	description:
+		'Compare an .env.example template against your project variables to detect missing, matched, and extra keys.',
+}
 
 export default async function EnvCheckerPage() {
 	const user = await getCurrentUser()

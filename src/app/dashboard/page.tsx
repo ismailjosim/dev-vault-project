@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { FilterPanel } from '@/components/common/FilterPanel'
 import { BrandLogo } from '@/components/common/BrandLogo'
 import { SearchBar } from '@/components/common/SearchBar'
@@ -23,6 +24,12 @@ import {
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import type { ReactNode } from 'react'
+
+export const metadata: Metadata = {
+	title: 'Dashboard',
+	description:
+		'View, organize, and manage your project vaults, environment secrets, and developer tools in DevVault.',
+}
 
 type DashboardPageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>

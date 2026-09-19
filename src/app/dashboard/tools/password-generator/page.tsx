@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import { PasswordGenerator } from '@/components/tools/PasswordGenerator'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Password Generator',
+	description:
+		'Create cryptographically strong, random passwords with configurable character options.',
+}
 
 export default async function PasswordGeneratorPage() {
 	const user = await getCurrentUser()

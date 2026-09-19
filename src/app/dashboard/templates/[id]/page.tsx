@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { UseTemplateModal } from '@/components/templates/UseTemplateModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { serializeDocument } from '@/lib/api'
@@ -11,6 +12,19 @@ import { notFound, redirect } from 'next/navigation'
 
 type TemplatePageProps = {
 	params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({
+	params,
+}: TemplatePageProps): Promise<Metadata> {
+	const { id } = await params
+	const template = getBuiltInTemplate(id)
+	if (!template) return { title: 'Template Not Found' }
+
+	return {
+		title: `${template.name} Template`,
+		description: template.description,
+	}
 }
 
 export default async function TemplatePage({ params }: TemplatePageProps) {

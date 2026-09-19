@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { ImportEnvFile } from '@/components/import/ImportEnvFile'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { serializeDocument } from '@/lib/api'
@@ -6,6 +7,12 @@ import { getCurrentUser } from '@/lib/session'
 import { Project } from '@/models/Project'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Import .env File',
+	description:
+		'Upload or paste environment variables and preview parsed values before importing into your project.',
+}
 
 export default async function ImportToolPage() {
 	const user = await getCurrentUser()

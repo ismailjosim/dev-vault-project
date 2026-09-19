@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import {
 	ProjectDocs,
 	ProjectDocumentation,
@@ -12,6 +13,25 @@ import { notFound, redirect } from 'next/navigation'
 
 type ProjectDocsPageProps = {
 	params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({
+	params,
+}: ProjectDocsPageProps): Promise<Metadata> {
+	const user = await getCurrentUser()
+	if (!user?.id) return { title: 'Documentation' }
+
+	await connectDB()
+	const { id } = await params
+	const project = await Project.findOne({ _id: id, userId: user.id }).select(
+		'projectName',
+	)
+	if (!project) return { title: 'Project Not Found' }
+
+	return {
+		title: `${project.projectName} Documentation`,
+		description: `Deployment endpoints, repositories, credentials, and documentation for ${project.projectName}.`,
+	}
 }
 
 export default async function ProjectDocsPage({

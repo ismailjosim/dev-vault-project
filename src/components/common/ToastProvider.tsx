@@ -2,15 +2,21 @@
 
 import { ToastContainer } from 'react-toastify'
 import { useTheme } from 'next-themes'
-import { useEffect, useState } from 'react'
+import { useSyncExternalStore } from 'react'
+
+const emptySubscribe = () => () => {}
+
+function useMounted() {
+	return useSyncExternalStore(
+		emptySubscribe,
+		() => true,
+		() => false,
+	)
+}
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
 	const { theme } = useTheme()
-	const [mounted, setMounted] = useState(false)
-
-	useEffect(() => {
-		setMounted(true)
-	}, [])
+	const mounted = useMounted()
 
 	if (!mounted) {
 		return <>{children}</>

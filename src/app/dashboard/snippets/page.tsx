@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { CategoryFilter } from '@/components/snippets/CategoryFilter'
 import { SnippetList } from '@/components/snippets/SnippetList'
 import { SnippetSummary } from '@/components/snippets/SnippetCard'
@@ -10,6 +11,12 @@ import { snippetQuerySchema } from '@/types/snippet'
 import { getBuiltInSnippets } from '@/utils/snippets'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Code Snippets',
+	description:
+		'Browse, create, and manage reusable integration code snippets mapped to required environment variables.',
+}
 
 type SnippetsPageProps = {
 	searchParams: Promise<Record<string, string | string[] | undefined>>

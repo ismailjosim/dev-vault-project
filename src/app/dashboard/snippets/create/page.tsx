@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import { SnippetForm } from '@/components/snippets/SnippetForm'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Create Snippet',
+	description:
+		'Save a reusable code snippet and link required environment variables in DevVault.',
+}
 
 export default async function CreateSnippetPage() {
 	const user = await getCurrentUser()

@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { ExportModal } from '@/components/export/ExportModal'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { serializeDocument } from '@/lib/api'
@@ -6,6 +7,12 @@ import { getCurrentUser } from '@/lib/session'
 import { Project } from '@/models/Project'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Export Environment Files',
+	description:
+		'Export project environment variables to .env, .env.local, JSON, YAML, Markdown, or .env.example formats.',
+}
 
 export default async function ExportToolPage() {
 	const user = await getCurrentUser()

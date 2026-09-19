@@ -16,9 +16,58 @@ const geistMono = Geist_Mono({
 	subsets: ['latin'],
 })
 
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+
 export const metadata: Metadata = {
-	title: 'DevVault',
-	description: 'Store and manage project environment variables',
+	metadataBase: new URL(appUrl),
+	title: {
+		default: 'DevVault - Developer Environment Variable & Secrets Manager',
+		template: '%s | DevVault',
+	},
+	description:
+		'Securely store, encrypt, compare, and export environment variables, configuration templates, and code snippets across all development environments with AES-256 security.',
+	applicationName: 'DevVault',
+	keywords: [
+		'environment variables',
+		'secret manager',
+		'env vault',
+		'developer tools',
+		'AES-256 encryption',
+		'dotenv',
+		'Next.js',
+		'Better Auth',
+		'configuration management',
+		'credentials manager',
+	],
+	authors: [{ name: 'DevVault Team' }],
+	creator: 'DevVault',
+	publisher: 'DevVault',
+	robots: {
+		index: true,
+		follow: true,
+		googleBot: {
+			index: true,
+			follow: true,
+			'max-video-preview': -1,
+			'max-image-preview': 'large',
+			'max-snippet': -1,
+		},
+	},
+	openGraph: {
+		type: 'website',
+		locale: 'en_US',
+		url: appUrl,
+		siteName: 'DevVault',
+		title: 'DevVault - Developer Environment Variable & Secrets Manager',
+		description:
+			'Securely store, encrypt, compare, and export environment variables, configuration templates, and code snippets across all development environments with AES-256 security.',
+	},
+	twitter: {
+		card: 'summary_large_image',
+		title: 'DevVault - Developer Environment Variable & Secrets Manager',
+		description:
+			'Securely store, encrypt, compare, and export environment variables, configuration templates, and code snippets across all development environments with AES-256 security.',
+	},
 	icons: {
 		icon: [
 			{ url: '/icon.ico' },

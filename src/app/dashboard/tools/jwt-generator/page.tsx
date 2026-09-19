@@ -1,8 +1,15 @@
+import type { Metadata } from 'next'
 import { JWTGenerator } from '@/components/tools/JWTGenerator'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'JWT Secret Generator',
+	description:
+		'Generate high-entropy access and refresh token secrets formatted for environment files.',
+}
 
 export default async function JWTGeneratorPage() {
 	const user = await getCurrentUser()

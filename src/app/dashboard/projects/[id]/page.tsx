@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { EnvVariableForm } from '@/components/env/EnvVariableForm'
 import { EnvVariableSummary } from '@/components/env/EnvVariableItem'
 import { EnvVariableTable } from '@/components/env/EnvVariableTable'
@@ -18,6 +19,27 @@ import { notFound, redirect } from 'next/navigation'
 type ProjectDetailPageProps = {
 	params: Promise<{ id: string }>
 	searchParams: Promise<Record<string, string | string[] | undefined>>
+}
+
+export async function generateMetadata({
+	params,
+}: ProjectDetailPageProps): Promise<Metadata> {
+	const user = await getCurrentUser()
+	if (!user?.id) return { title: 'Project Details' }
+
+	await connectDB()
+	const { id } = await params
+	const project = await Project.findOne({ _id: id, userId: user.id }).select(
+		'projectName description category framework',
+	)
+	if (!project) return { title: 'Project Not Found' }
+
+	return {
+		title: project.projectName,
+		description:
+			project.description ||
+			`Manage encrypted environment variables and secrets for ${project.projectName} (${project.framework} / ${project.category}).`,
+	}
 }
 
 export default async function ProjectDetailPage({

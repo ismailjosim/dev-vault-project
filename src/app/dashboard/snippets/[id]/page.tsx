@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import {
 	SnippetDetail,
 	SnippetViewer,
@@ -13,6 +14,36 @@ import { notFound, redirect } from 'next/navigation'
 
 type SnippetPageProps = {
 	params: Promise<{ id: string }>
+}
+
+export async function generateMetadata({
+	params,
+}: SnippetPageProps): Promise<Metadata> {
+	const { id } = await params
+	const builtIn = getBuiltInSnippet(id)
+	if (builtIn) {
+		return {
+			title: `${builtIn.title} - Snippet`,
+			description: builtIn.description,
+		}
+	}
+
+	const user = await getCurrentUser()
+	if (!user?.id) return { title: 'Snippet Details' }
+
+	await connectDB()
+	const customSnippet = await Snippet.findOne({
+		_id: id,
+		userId: user.id,
+	}).select('title description')
+	if (!customSnippet) return { title: 'Snippet Not Found' }
+
+	return {
+		title: `${customSnippet.title} - Snippet`,
+		description:
+			customSnippet.description ||
+			`Reusable code snippet for ${customSnippet.title}.`,
+	}
 }
 
 export default async function SnippetPage({ params }: SnippetPageProps) {

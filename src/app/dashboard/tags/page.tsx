@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { TagCloud, TagSummary } from '@/components/common/TagCloud'
 import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { connectDB } from '@/lib/mongodb'
@@ -5,6 +6,12 @@ import { getCurrentUser } from '@/lib/session'
 import { Project } from '@/models/Project'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
+
+export const metadata: Metadata = {
+	title: 'Project Tags',
+	description:
+		'Browse tags and filter projects across your DevVault environment.',
+}
 
 export default async function TagsPage() {
 	const user = await getCurrentUser()
