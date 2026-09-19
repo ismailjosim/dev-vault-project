@@ -106,6 +106,7 @@ export const exportSchema = z.object({
 		'example',
 	]),
 	environment: environmentSchema.optional(),
+	resolveInterpolation: z.boolean().optional().default(false),
 })
 
 export const projectDocumentationSchema = z.object({

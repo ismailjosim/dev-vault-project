@@ -1,6 +1,9 @@
 'use client'
 
+import { useState } from 'react'
+
 export function ExportMenu({ projectId }: { projectId: string }) {
+	const [resolveInterpolation, setResolveInterpolation] = useState(false)
 	const formats = [
 		'env',
 		'env.local',
@@ -17,7 +20,11 @@ export function ExportMenu({ projectId }: { projectId: string }) {
 		const response = await fetch(`/api/projects/${projectId}/export`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ format, environment: environment || undefined }),
+			body: JSON.stringify({
+				format,
+				environment: environment || undefined,
+				resolveInterpolation,
+			}),
 		})
 
 		return (await response.json()) as {
@@ -43,28 +50,42 @@ export function ExportMenu({ projectId }: { projectId: string }) {
 	}
 
 	return (
-		<div className='flex flex-wrap gap-2'>
-			{formats.map((format) => (
-				<div
-					key={format}
-					className='border-border flex overflow-hidden rounded-md border'
-				>
-					<button
-						type='button'
-						onClick={() => exportProject(format)}
-						className='text-foreground hover:bg-hover px-3 py-2 text-sm'
+		<div className='flex flex-col gap-2'>
+			<label className='text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 text-xs'>
+				<input
+					type='checkbox'
+					checked={resolveInterpolation}
+					onChange={(e) => setResolveInterpolation(e.target.checked)}
+					className='border-border text-primary rounded'
+				/>
+				<span>
+					Resolve variable references (e.g. <code>{'${HOST}'}</code> → evaluated
+					value)
+				</span>
+			</label>
+			<div className='flex flex-wrap gap-2'>
+				{formats.map((format) => (
+					<div
+						key={format}
+						className='border-border flex overflow-hidden rounded-md border'
 					>
-						Export {format}
-					</button>
-					<button
-						type='button'
-						onClick={() => copyProject(format)}
-						className='border-border text-muted-foreground hover:bg-hover hover:text-foreground border-l px-3 py-2 text-sm'
-					>
-						Copy
-					</button>
-				</div>
-			))}
+						<button
+							type='button'
+							onClick={() => exportProject(format)}
+							className='text-foreground hover:bg-hover px-3 py-2 text-sm'
+						>
+							Export {format}
+						</button>
+						<button
+							type='button'
+							onClick={() => copyProject(format)}
+							className='border-border text-muted-foreground hover:bg-hover hover:text-foreground border-l px-3 py-2 text-sm'
+						>
+							Copy
+						</button>
+					</div>
+				))}
+			</div>
 		</div>
 	)
 }

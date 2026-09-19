@@ -2,7 +2,9 @@
 
 import { ExpiryBadge } from '@/components/env/ExpiryBadge'
 import { SecretHistoryModal } from '@/components/env/SecretHistoryModal'
+import { hasInterpolation } from '@/utils/interpolation'
 import {
+	AlertCircle,
 	Clipboard,
 	Copy,
 	Eye,
@@ -10,6 +12,7 @@ import {
 	FileCode2,
 	History,
 	Trash2,
+	Zap,
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -18,6 +21,9 @@ export type EnvVariableSummary = {
 	_id: string
 	key: string
 	value: string | null
+	resolvedValue?: string | null
+	interpolationError?: string | null
+	dependencies?: string[]
 	type: string
 	isPublic: boolean
 	note: string
@@ -36,27 +42,35 @@ export function EnvVariableItem({
 	const router = useRouter()
 	const [copied, setCopied] = useState<string | null>(null)
 	const [revealedValue, setRevealedValue] = useState<string | null>(null)
+	const [resolvedValue, setResolvedValue] = useState<string | null>(null)
+	const [interpolationError, setInterpolationError] = useState<string | null>(
+		null,
+	)
+	const [showResolved, setShowResolved] = useState(true)
 	const [isRevealing, setIsRevealing] = useState(false)
 	const [isHistoryOpen, setIsHistoryOpen] = useState(false)
 
-	async function getDecryptedValue() {
+	async function getVariableData() {
 		const response = await fetch(`/api/projects/${projectId}/env?reveal=true`)
 		const payload = (await response.json()) as {
 			variables: EnvVariableSummary[]
 		}
-		const current = payload.variables.find((item) => item._id === variable._id)
-
-		return current?.value || ''
+		return payload.variables.find((item) => item._id === variable._id)
 	}
 
-	async function copyValue(format: 'key' | 'value' | 'pair') {
-		const value = await getDecryptedValue()
+	async function copyValue(format: 'key' | 'value' | 'pair' | 'resolved') {
+		const current = await getVariableData()
+		const rawValue = current?.value || ''
+		const evaluated = current?.resolvedValue || rawValue
+
 		const text =
 			format === 'key'
 				? variable.key
 				: format === 'pair'
-					? `${variable.key}=${value}`
-					: value
+					? `${variable.key}=${evaluated}`
+					: format === 'resolved'
+						? evaluated
+						: rawValue
 
 		await navigator.clipboard.writeText(text)
 		setCopied(format)
@@ -83,11 +97,16 @@ export function EnvVariableItem({
 	async function toggleReveal() {
 		if (revealedValue !== null) {
 			setRevealedValue(null)
+			setResolvedValue(null)
+			setInterpolationError(null)
 			return
 		}
 
 		setIsRevealing(true)
-		setRevealedValue(await getDecryptedValue())
+		const current = await getVariableData()
+		setRevealedValue(current?.value ?? '')
+		setResolvedValue(current?.resolvedValue ?? null)
+		setInterpolationError(current?.interpolationError ?? null)
 		setIsRevealing(false)
 
 		// Audit log secret reveal event
@@ -118,8 +137,44 @@ export function EnvVariableItem({
 				<td className='text-foreground px-3 py-3 font-mono text-sm'>
 					{variable.key}
 				</td>
-				<td className='text-muted-foreground max-w-55 truncate px-3 py-3 font-mono text-sm'>
-					{revealedValue ?? '••••••••'}
+				<td className='text-muted-foreground max-w-72 px-3 py-3 font-mono text-sm'>
+					{revealedValue === null ? (
+						'••••••••'
+					) : (
+						<div className='flex flex-col gap-1'>
+							<div className='flex items-center gap-2'>
+								<span className='text-foreground font-mono'>
+									{showResolved && resolvedValue
+										? resolvedValue
+										: revealedValue}
+								</span>
+								{hasInterpolation(revealedValue) && resolvedValue && (
+									<button
+										type='button'
+										onClick={() => setShowResolved(!showResolved)}
+										title={
+											showResolved
+												? 'Switch to raw template'
+												: 'Switch to resolved value'
+										}
+										className='border-primary/30 bg-primary/10 text-primary hover:bg-primary/20 inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] font-medium'
+									>
+										<Zap className='h-2.5 w-2.5' />
+										{showResolved ? 'Resolved' : 'Raw'}
+									</button>
+								)}
+							</div>
+							{interpolationError && (
+								<div
+									className='text-destructive flex items-center gap-1 text-[11px]'
+									title={interpolationError}
+								>
+									<AlertCircle className='h-3 w-3 shrink-0' />
+									<span className='truncate'>{interpolationError}</span>
+								</div>
+							)}
+						</div>
+					)}
 				</td>
 				<td className='px-3 py-3'>
 					<span className='bg-secondary text-secondary-foreground rounded px-2 py-1 text-xs'>

@@ -6,6 +6,7 @@ import { Project } from '@/models/Project'
 import { exportSchema } from '@/types/project'
 import { recordAudit } from '@/utils/audit'
 import { generateEnvFile, getExportFilename } from '@/utils/env-exporter'
+import { resolveInterpolation } from '@/utils/interpolation'
 import { NextRequest, NextResponse } from 'next/server'
 
 type RouteContext = {
@@ -37,13 +38,26 @@ export async function POST(request: NextRequest, context: RouteContext) {
 			environment: 1,
 			key: 1,
 		})
-		const exportVariables = variables.map((variable) => ({
+		let exportVariables = variables.map((variable) => ({
 			key: variable.key,
 			value: variable.getDecryptedValue(),
 			note: variable.note,
 			type: variable.type,
 			environment: variable.environment,
 		}))
+
+		if (input.resolveInterpolation) {
+			const dict: Record<string, string> = {}
+			for (const v of exportVariables) {
+				dict[v.key] = v.value
+			}
+			const { resolved } = resolveInterpolation(dict)
+			exportVariables = exportVariables.map((v) => ({
+				...v,
+				value: resolved[v.key] ?? v.value,
+			}))
+		}
+
 		const filename = getExportFilename(project.slug, input.format)
 		const content = generateEnvFile(exportVariables, input.format)
 

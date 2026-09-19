@@ -33,6 +33,7 @@ export function ExportModal({
 	const [environment, setEnvironment] = useState('')
 	const [preview, setPreview] = useState('')
 	const [filename, setFilename] = useState('')
+	const [resolveInterpolation, setResolveInterpolation] = useState(false)
 	const [error, setError] = useState<string | null>(null)
 
 	async function loadExport() {
@@ -40,7 +41,11 @@ export function ExportModal({
 		const response = await fetch(`/api/projects/${projectId}/export`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ format, environment: environment || undefined }),
+			body: JSON.stringify({
+				format,
+				environment: environment || undefined,
+				resolveInterpolation,
+			}),
 		})
 
 		if (!response.ok) {
@@ -129,6 +134,19 @@ export function ExportModal({
 								</option>
 							))}
 						</select>
+					</label>
+
+					<label className='text-muted-foreground hover:text-foreground flex cursor-pointer items-center gap-2 text-xs'>
+						<input
+							type='checkbox'
+							checked={resolveInterpolation}
+							onChange={(e) => setResolveInterpolation(e.target.checked)}
+							className='border-border text-primary rounded'
+						/>
+						<span>
+							Resolve variable references (e.g.{' '}
+							<code className='font-mono'>${'{VAR}'}</code> → evaluated values)
+						</span>
 					</label>
 
 					<div className='flex gap-2'>

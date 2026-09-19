@@ -16,6 +16,7 @@ import {
 	FileCheck2,
 	FileDown,
 	FileUp,
+	Flame,
 	KeyRound,
 	LayoutTemplate,
 	ShieldCheck,
@@ -140,6 +141,12 @@ export default async function DashboardPage({
 						icon={<FileCheck2 className='h-4 w-4' />}
 						title='Env checker'
 						description='Compare saved keys to examples.'
+					/>
+					<ToolLink
+						href='/dashboard/tools/secret-share'
+						icon={<Flame className='h-4 w-4 text-amber-500' />}
+						title='Secret share'
+						description='Burn-after-reading ephemeral links.'
 					/>
 					<ToolLink
 						href='/dashboard/tags'

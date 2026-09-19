@@ -5,6 +5,7 @@ import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { envQuerySchema, envVariableCreateSchema } from '@/types/project'
 import { recordAudit } from '@/utils/audit'
+import { resolveInterpolation } from '@/utils/interpolation'
 import { recordEnvVersion } from '@/utils/versioning'
 import { NextRequest, NextResponse } from 'next/server'
 
@@ -39,9 +40,31 @@ export async function GET(request: NextRequest, context: RouteContext) {
 			environment: 1,
 			key: 1,
 		})
+
+		let resolvedMap: Record<string, string> = {}
+		let errorsMap: Record<string, string> = {}
+		let dependenciesMap: Record<string, string[]> = {}
+
+		if (query.reveal) {
+			const dict: Record<string, string> = {}
+			for (const variable of variables) {
+				dict[variable.key] = variable.getDecryptedValue()
+			}
+			const interpolation = resolveInterpolation(dict)
+			resolvedMap = interpolation.resolved
+			errorsMap = interpolation.errors
+			dependenciesMap = interpolation.dependencies
+		}
+
 		const payload = variables.map((variable) => {
 			const item = serializeDocument<Record<string, unknown>>(variable)
-			item.value = query.reveal ? variable.getDecryptedValue() : null
+			const decrypted = query.reveal ? variable.getDecryptedValue() : null
+			item.value = decrypted
+			if (query.reveal && decrypted !== null) {
+				item.resolvedValue = resolvedMap[variable.key] ?? decrypted
+				item.interpolationError = errorsMap[variable.key] ?? null
+				item.dependencies = dependenciesMap[variable.key] ?? []
+			}
 			return item
 		})
 
