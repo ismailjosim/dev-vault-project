@@ -3,8 +3,19 @@
 import { useRouter } from 'next/navigation'
 import { FormEvent, useState } from 'react'
 
-export function ProjectForm() {
+export interface ProjectFormProps {
+	defaultWorkspaceId?: string
+	workspaces?: { _id: string; name: string }[]
+}
+
+export function ProjectForm({
+	defaultWorkspaceId,
+	workspaces = [],
+}: ProjectFormProps) {
 	const router = useRouter()
+	const [selectedWorkspace, setSelectedWorkspace] = useState<string>(
+		defaultWorkspaceId || 'personal',
+	)
 	const [error, setError] = useState<string | null>(null)
 	const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -14,6 +25,7 @@ export function ProjectForm() {
 		setError(null)
 
 		const form = new FormData(event.currentTarget)
+		const workspaceVal = form.get('workspaceId') as string
 		const response = await fetch('/api/projects', {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
@@ -22,6 +34,8 @@ export function ProjectForm() {
 				description: form.get('description'),
 				category: form.get('category'),
 				framework: form.get('framework'),
+				workspaceId:
+					workspaceVal && workspaceVal !== 'personal' ? workspaceVal : null,
 				tags: String(form.get('tags') || '')
 					.split(',')
 					.map((tag) => tag.trim())
@@ -52,15 +66,36 @@ export function ProjectForm() {
 
 			<div>
 				<label className='text-foreground block text-sm font-medium'>
-					Name
+					Project Name
 				</label>
 				<input
 					name='projectName'
 					required
 					className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 outline-none'
-					placeholder='DevVault'
+					placeholder='e.g. Payment Gateway API'
 				/>
 			</div>
+
+			{workspaces.length > 0 && (
+				<div>
+					<label className='text-foreground block text-sm font-medium'>
+						Workspace / Scope
+					</label>
+					<select
+						name='workspaceId'
+						value={selectedWorkspace}
+						onChange={(e) => setSelectedWorkspace(e.target.value)}
+						className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none'
+					>
+						<option value='personal'>Personal Workspace (Private)</option>
+						{workspaces.map((ws) => (
+							<option key={ws._id} value={ws._id}>
+								{ws.name} (Team Workspace)
+							</option>
+						))}
+					</select>
+				</div>
+			)}
 
 			<div>
 				<label className='text-foreground block text-sm font-medium'>
@@ -68,9 +103,9 @@ export function ProjectForm() {
 				</label>
 				<textarea
 					name='description'
-					rows={4}
-					className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 outline-none'
-					placeholder='What does this project use these variables for?'
+					rows={3}
+					className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none'
+					placeholder='What is this project used for?'
 				/>
 			</div>
 
@@ -81,7 +116,7 @@ export function ProjectForm() {
 					</label>
 					<select
 						name='category'
-						className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 outline-none'
+						className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none'
 					>
 						<option>Full Stack</option>
 						<option>Frontend</option>
@@ -98,18 +133,18 @@ export function ProjectForm() {
 					<input
 						name='framework'
 						defaultValue='Next.js'
-						className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 outline-none'
+						className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none'
 					/>
 				</div>
 			</div>
 
 			<div>
 				<label className='text-foreground block text-sm font-medium'>
-					Tags
+					Tags (comma separated)
 				</label>
 				<input
 					name='tags'
-					className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 outline-none'
+					className='border-border bg-card text-foreground focus:border-muted-foreground mt-1 w-full rounded-md border px-3 py-2 text-sm outline-none'
 					placeholder='auth, payments, production'
 				/>
 			</div>
@@ -117,7 +152,7 @@ export function ProjectForm() {
 			<button
 				type='submit'
 				disabled={isSubmitting}
-				className='bg-primary text-primary-foreground rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-60'
+				className='bg-primary text-primary-foreground hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60'
 			>
 				{isSubmitting ? 'Creating...' : 'Create project'}
 			</button>

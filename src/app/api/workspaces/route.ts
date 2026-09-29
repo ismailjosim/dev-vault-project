@@ -13,8 +13,25 @@ export async function GET() {
 
 		await connectDB()
 
+		// Auto-claim pending invitations for this user's email
+		const user = await getCurrentUser()
+		if (user?.email) {
+			await WorkspaceMember.updateMany(
+				{
+					email: user.email.toLowerCase(),
+					userId: { $regex: '^invited_' },
+				},
+				{ $set: { userId } },
+			)
+		}
+
 		// Get all workspace IDs the user belongs to
-		const memberships = await WorkspaceMember.find({ userId })
+		const memberships = await WorkspaceMember.find({
+			$or: [
+				{ userId },
+				...(user?.email ? [{ email: user.email.toLowerCase() }] : []),
+			],
+		})
 		const workspaceIds = memberships.map((m) => m.workspaceId)
 
 		// Also get workspaces owned by user directly

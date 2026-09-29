@@ -15,8 +15,7 @@ export function MembersManagement({
 	initialMembers,
 	currentUserRole,
 }: MembersManagementProps) {
-	const [members, setMembers] =
-		useState<WorkspaceMemberItem[]>(initialMembers)
+	const [members, setMembers] = useState<WorkspaceMemberItem[]>(initialMembers)
 	const [isInviteOpen, setIsInviteOpen] = useState(false)
 	const router = useRouter()
 
@@ -61,7 +60,7 @@ export function MembersManagement({
 					<button
 						type='button'
 						onClick={() => setIsInviteOpen(true)}
-						className='bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold hover:opacity-90 transition'
+						className='bg-primary text-primary-foreground flex items-center gap-2 rounded-md px-4 py-2 text-sm font-semibold transition hover:opacity-90'
 					>
 						<UserPlus className='h-4 w-4' />
 						Invite Member

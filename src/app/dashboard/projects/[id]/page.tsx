@@ -152,6 +152,7 @@ export default async function ProjectDetailPage({
 					<EnvVariableTable
 						projectId={projectPayload._id}
 						variables={safeVariables}
+						environments={projectPayload.environments || ['dev', 'prod']}
 					/>
 				</div>
 			</div>

@@ -10,14 +10,33 @@ const checkMissingSchema = z.object({
 })
 
 export async function POST(request: NextRequest) {
-	const input = checkMissingSchema.parse(await request.json())
-	const comparison = compareEnvFiles(
-		parseEnvText(input.exampleContent).variables,
-		parseEnvText(input.projectContent).variables,
-	)
+	try {
+		const body = await request.json().catch(() => ({}))
+		const parsed = checkMissingSchema.safeParse(body)
+		if (!parsed.success) {
+			return NextResponse.json(
+				{
+					error:
+						'Invalid input. Please provide exampleContent and projectContent.',
+				},
+				{ status: 400 },
+			)
+		}
 
-	return NextResponse.json({
-		comparison,
-		report: generateComparisonReport(input.projectName, comparison),
-	})
+		const { projectName, exampleContent, projectContent } = parsed.data
+		const comparison = compareEnvFiles(
+			parseEnvText(exampleContent).variables,
+			parseEnvText(projectContent).variables,
+		)
+
+		return NextResponse.json({
+			comparison,
+			report: generateComparisonReport(projectName, comparison),
+		})
+	} catch (error) {
+		return NextResponse.json(
+			{ error: (error as Error).message || 'Failed to compare env files' },
+			{ status: 500 },
+		)
+	}
 }

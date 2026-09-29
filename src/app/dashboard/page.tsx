@@ -10,9 +10,11 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle'
 import { getCurrentUser } from '@/lib/session'
 import { connectDB } from '@/lib/mongodb'
 import { serializeDocument } from '@/lib/api'
+import { EnvVariable } from '@/models/EnvVariable'
 import { Project } from '@/models/Project'
 import { Workspace } from '@/models/Workspace'
 import { WorkspaceMember } from '@/models/WorkspaceMember'
+import { ExpiringSecretsAlert, ExpiringSecretItem } from '@/components/security'
 import { projectQuerySchema } from '@/types/project'
 import {
 	Code2,
@@ -55,8 +57,24 @@ export default async function DashboardPage({
 			? rawParams.workspaceId
 			: null
 
+	// Auto-claim pending invitations for this user's email
+	if (user.email) {
+		await WorkspaceMember.updateMany(
+			{
+				email: user.email.toLowerCase(),
+				userId: { $regex: '^invited_' },
+			},
+			{ $set: { userId: user.id } },
+		)
+	}
+
 	// Fetch user's workspaces
-	const memberships = await WorkspaceMember.find({ userId: user.id })
+	const memberships = await WorkspaceMember.find({
+		$or: [
+			{ userId: user.id },
+			...(user.email ? [{ email: user.email.toLowerCase() }] : []),
+		],
+	})
 	const workspaceIds = memberships.map((m) => m.workspaceId)
 	const userWorkspaces = await Workspace.find({
 		$or: [{ ownerId: user.id }, { _id: { $in: workspaceIds } }],
@@ -106,6 +124,32 @@ export default async function DashboardPage({
 		.sort({ isPinned: -1, createdAt: -1 })
 		.limit(query.limit)
 
+	// Check for expiring secrets within 7 days across visible projects
+	// eslint-disable-next-line react-hooks/purity
+	const sevenDaysAhead = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+	const projectIds = projects.map((p) => p._id)
+	const expiringDocs =
+		projectIds.length > 0
+			? await EnvVariable.find({
+					projectId: { $in: projectIds },
+					expiryDate: { $ne: null, $lte: sevenDaysAhead },
+				})
+					.select('_id key environment expiryDate projectId')
+					.lean()
+			: []
+
+	const projectMap = new Map(
+		projects.map((p) => [p._id.toString(), p.projectName]),
+	)
+	const expiringSecrets: ExpiringSecretItem[] = expiringDocs.map((doc) => ({
+		_id: String(doc._id),
+		key: String(doc.key),
+		environment: String(doc.environment),
+		expiryDate: doc.expiryDate ? new Date(doc.expiryDate).toISOString() : '',
+		projectId: String(doc.projectId),
+		projectName: projectMap.get(String(doc.projectId)) || 'Project',
+	}))
+
 	return (
 		<main className='bg-background min-h-screen px-6 py-8'>
 			<div className='mx-auto max-w-6xl'>
@@ -140,6 +184,12 @@ export default async function DashboardPage({
 						</Link>
 					</div>
 				</div>
+
+				{expiringSecrets.length > 0 && (
+					<div className='mt-6'>
+						<ExpiringSecretsAlert secrets={expiringSecrets} />
+					</div>
+				)}
 
 				<div className='mt-6'>
 					<h1 className='text-foreground text-2xl font-semibold'>

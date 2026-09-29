@@ -105,4 +105,3 @@ export interface WorkspaceMenuItemProps {
 	onSelect: (id: string) => void
 	onManageTeam: () => void
 }
-

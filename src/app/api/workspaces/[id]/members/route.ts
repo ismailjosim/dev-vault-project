@@ -88,11 +88,29 @@ export async function POST(request: NextRequest, { params }: RouteContext) {
 			)
 		}
 
-		// Create member record. If userId matches or placeholder until they join
+		// Create member record. If user exists in DB, link immediately, otherwise set invited placeholder
+		const normalizedEmail = input.email.toLowerCase()
+		let targetUserId = `invited_${Date.now()}`
+
+		try {
+			const conn = await connectDB()
+			const db = conn?.db
+			if (db) {
+				const existingUser = await db
+					.collection('user')
+					.findOne({ email: normalizedEmail })
+				if (existingUser) {
+					targetUserId = String(existingUser._id || existingUser.id)
+				}
+			}
+		} catch {
+			// Fallback to invited placeholder
+		}
+
 		const newMember = await WorkspaceMember.create({
 			workspaceId: id,
-			userId: `invited_${Date.now()}`,
-			email: input.email.toLowerCase(),
+			userId: targetUserId,
+			email: normalizedEmail,
 			role: input.role,
 			allowedEnvironments: input.allowedEnvironments,
 			canRevealSecrets: input.canRevealSecrets,
