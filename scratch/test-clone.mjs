@@ -10,8 +10,15 @@ async function testClone() {
 		process.exit(0)
 	}
 
-	console.log('Testing clone for project:', project.projectName, project._id.toString())
-	const envVars = await db.collection('envvariables').find({ projectId: project._id }).toArray()
+	console.log(
+		'Testing clone for project:',
+		project.projectName,
+		project._id.toString(),
+	)
+	const envVars = await db
+		.collection('envvariables')
+		.find({ projectId: project._id })
+		.toArray()
 	console.log(`Found ${envVars.length} total env variables in project`)
 
 	await mongoose.disconnect()
